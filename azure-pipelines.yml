@@ -1,0 +1,34 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+trigger:
+- master
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+steps:
+- task: Docker@2
+  displayName: Login to Docker Hub
+  inputs:
+    command: login
+    containerRegistry: dockerRegistryServiceConnection
+- task: Docker@2
+  inputs:
+    containerRegistry: 'dockerRegistryServiceConnection'
+    repository: 'kube-demo'
+    command: 'buildAndPush'
+    Dockerfile: '**/Dockerfile'
+    tags: 'prod'
+- task: HelmDeploy@0
+  inputs:
+    connectionType: 'Kubernetes Service Connection'
+    kubernetesServiceConnection: 'k8s-aks'
+    namespace: 'prod'
+    command: 'upgrade'
+    chartType: 'Name'
+    chartName: 'kube-demo'
+    force: true
+    tillerNamespace: 'default'
